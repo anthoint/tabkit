@@ -9,11 +9,11 @@ class WebTool:
         query = (text or "").strip()
 
         if not query:
-            return ToolResult(tool="web", status="query_failed", content={"query": query, "results": []}, confidence=0.0)
+            return ToolResult(tool="web", status="query_failed", content={"query": query, "results": []})
 
         status, results = self.search_client.search(query)
 
         if status != "ok":
-            return ToolResult(tool="web", status=status, content={"query": query, "results": []}, confidence=0.0)
+            return ToolResult(tool="web", status=status, content={"query": query, "results": []})
 
-        return ToolResult(tool="web", status="ok", content={"query": query, "results": results}, confidence=0.0)
+        return ToolResult(tool="web", status="ok", content={"query": query, "results": results})

@@ -155,6 +155,8 @@ class App:
 
 
 def main():
+    host = config.BASE_URL or "api.openai.com"
+    print("Mode: " + config.MODE + "  Chat: " + config.CHAT_MODEL + "  Host: " + host)
     print("Type instructions to start.\n")
     app = App()
     if app.url:

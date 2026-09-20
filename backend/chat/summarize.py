@@ -1,7 +1,5 @@
 # Cheap overflow summarizer. Runs only when chat memory is over the raw window.
 
-from openai import OpenAI
-
 from backend import config
 
 
@@ -51,9 +49,9 @@ def summarize(items) -> str:
         lines.append(f"{role}: {text}")
 
     try:
-        client = OpenAI(api_key=config.require_openai_api_key())
+        client = config.make_client()
         response = client.chat.completions.create(
-            model=config.SUMMARIZE_OPENAI_MODEL,
+            model=config.SUMMARIZE_MODEL,
             messages=[
                 {"role": "system", "content": summarize_prompt()},
                 {"role": "user", "content": "\n".join(lines)},

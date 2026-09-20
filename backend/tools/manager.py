@@ -15,8 +15,7 @@ class ToolManager:
                 return ToolResult(
                     tool="web",
                     status="skipped",
-                    content={"query": text, "reason": "web search off"},
-                    confidence=0.0,
+                    content={"query": text},
                 )
             result = self.web_tool.run(text)
             if config.use_debug():
@@ -24,5 +23,5 @@ class ToolManager:
                 entries.append(entry(result))
                 save_debug(entries)
             return result
-        return ToolResult(tool=name, status="tool_not_found", content={"query": None}, confidence=0.0)
+        return ToolResult(tool=name, status="tool_not_found", content={"query": None})
 

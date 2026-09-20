@@ -1,21 +1,22 @@
 from backend import config
 from backend.chat.prompts import chat_prompt
 from backend.context import Context
-from openai import OpenAI
 
 class BrowserAssistant:
     def __init__(self):
-        api_key = config.require_openai_api_key()
-        self.client = OpenAI(api_key=api_key)
-        self.model = config.CHAT_OPENAI_MODEL
+        self.client = config.make_client()
+        self.model = config.CHAT_MODEL
     
     def reply(self, context: Context, tool_result=None, memory=None, older_summary=None, page_notes=None, exact=None):
         try:
+            notes = page_notes
+            if config.MODE == "local":
+                notes = self.trim_notes(page_notes, context.text)
             blocks = (
                 self.format_older_summary(older_summary)
                 + self.format_memory(memory)
                 + self.format_tool_result(tool_result)
-                + self.format_page_notes(page_notes)
+                + self.format_page_notes(notes)
                 + self.format_exact(exact)
             )
             user_text = context.text
@@ -30,11 +31,18 @@ class BrowserAssistant:
                 {"role": "user", "content": user_text},
             ]
 
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                max_completion_tokens=config.CHAT_MAX_TOKENS,
+            call = {
+                "model": self.model,
+                "messages": messages,
+            }
+            token_field = {"local": "max_tokens", "api": "max_completion_tokens"}.get(
+                config.MODE, "max_completion_tokens"
             )
+            call[token_field] = config.CHAT_MAX_TOKENS
+            if config.MODE == "local":
+                call["temperature"] = 0.2
+
+            response = self.client.chat.completions.create(**call)
             return response.choices[0].message.content
         except Exception as e:
             return f"Error: {e}"
@@ -68,20 +76,45 @@ class BrowserAssistant:
             "Results:",
         ]
         for i, item in enumerate(content.get("results", []), start=1):
-            lines.append(f"{i}. Id: search_{i}")
+            lines.append(f"{i}. URL: {item.get('url', '')}")
             lines.append(f"   Title: {item.get('title', '')}")
-            lines.append(f"   URL: {item.get('url', '')}")
             lines.append(f"   Snippet: {item.get('snippet', '')}")
         return "\n".join(lines)
 
-    # Turn [{name, paraphrase}, ...] into the Page notes: block the chat prompt expects.
+    # Local chat cannot hold a whole Wikipedia dump. Keep matching names + a few.
+    def trim_notes(self, page_notes, question):
+        if not page_notes or len(page_notes) <= 12:
+            return page_notes
+        q = (question or "").lower()
+        picked = []
+        leftover = []
+        for item in page_notes:
+            name = (item.get("name") or "").lower().replace("-", " ")
+            hit = False
+            for part in name.split():
+                if len(part) >= 4 and part in q:
+                    hit = True
+                    break
+            if hit:
+                picked.append(item)
+            else:
+                leftover.append(item)
+        out = list(picked)
+        for item in leftover:
+            if len(out) >= 12:
+                break
+            out.append(item)
+        return out
+
+    # Turn [{name, paraphrase}, ...] into the Tab context: block the chat prompt expects.
     def format_page_notes(self, page_notes=None):
         if not page_notes:
             return ""
-        lines = ["", "Page notes:"]
-        for i, item in enumerate(page_notes, start=1):
-            lines.append(f"{i}. Name: {item.get('name', '')}")
-            lines.append(f"   Paraphrase: {item.get('paraphrase', '')}")
+        lines = ["", "Tab context (time order, do not copy as a bullet list):"]
+        for item in page_notes:
+            name = item.get("name", "")
+            text = item.get("paraphrase", "")
+            lines.append(name + " — " + text)
         return "\n".join(lines)
 
     # Turn {name, text} into the Exact: block. Chat must copy text as-is.

@@ -1,7 +1,5 @@
 import json
 
-from openai import OpenAI
-
 from backend import config 
 from backend.context import Context
 from backend.sufficiency.prompts import sufficiency_prompt
@@ -9,9 +7,8 @@ from backend.sufficiency.results import SufficiencyResult
 
 class SufficiencyChecker:
     def __init__(self):
-        api_key = config.require_openai_api_key()
-        self.client = OpenAI(api_key=api_key)
-        self.model = config.SUFFICIENCY_OPENAI_MODEL
+        self.client = config.make_client()
+        self.model = config.SUFFICIENCY_MODEL
 
     def check(self, context: Context, previous_user=None, previous_assistant=None):
         try:

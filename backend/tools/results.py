@@ -6,4 +6,3 @@ class ToolResult:
     tool: str
     status: str
     content: dict[str, Any]
-    confidence: float = 0.0

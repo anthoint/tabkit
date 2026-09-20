@@ -7,8 +7,6 @@ def entry(result: ToolResult):
         "tool": result.tool,
         "status": result.status,
         "query": result.content.get("query"),
-        "confidence": result.confidence,
-        "reason": result.content.get("reason", ""),
         "urls": [item.get("url", "") for item in results],
         "snippet": [item.get("snippet", "") for item in results],
     }

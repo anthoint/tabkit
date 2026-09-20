@@ -50,7 +50,60 @@ class PageReader:
                 continue
             paraphrase, _exact = self.parse_file(path.read_text(encoding="utf-8"))
             notes.append({"name": path.stem, "paraphrase": paraphrase})
+        notes.sort(key=self.time_key)
         return notes
+
+    # Years in the file name first, then usual life-stage words, then A-Z.
+    def time_key(self, item):
+        name = (item.get("name") or "").lower().replace("_", "-")
+        year = 9999
+        digits = ""
+        for ch in name:
+            if ch.isdigit():
+                digits += ch
+                if len(digits) == 4:
+                    year = int(digits)
+                    break
+            else:
+                digits = ""
+        stages = (
+            ("intro", 0),
+            ("early-life", 1),
+            ("family", 1),
+            ("childhood", 1),
+            ("education", 2),
+            ("marriage", 3),
+            ("vocation", 4),
+            ("militia", 4),
+            ("lawyer", 4),
+            ("prairie", 4),
+            ("legislature", 5),
+            ("house-of", 5),
+            ("republican", 6),
+            ("emergence", 6),
+            ("debate", 6),
+            ("election", 7),
+            ("inauguration", 7),
+            ("secession", 7),
+            ("president", 8),
+            ("first-term", 8),
+            ("commander", 8),
+            ("emancipation", 9),
+            ("gettysburg", 9),
+            ("re-election", 10),
+            ("second-term", 10),
+            ("assassin", 11),
+            ("funeral", 12),
+            ("burial", 12),
+            ("legacy", 13),
+            ("memorial", 13),
+            ("reputation", 13),
+        )
+        stage = 50
+        for word, rank in stages:
+            if word in name and rank < stage:
+                stage = rank
+        return (year if year != 9999 else 1800 + stage, stage, name)
 
     # Return the verbatim Exact block from one file (name='Cats' reads Cats.txt).
     def exact(self, url, name):

@@ -26,6 +26,8 @@ class Pipeline:
     def handle(self, context: Context, memory=None) -> str:
         if self.is_crisis(context.text):
             return HELP_LINE
+        if self.is_off_topic(context.text):
+            return SORRY_LINE
 
         user_text = self.previous_user_text(memory)
         assistant_text = self.previous_assistant_text(memory)
@@ -196,6 +198,66 @@ class Pipeline:
             return True
         if " die " in q or " died " in q or " dying " in q:
             return True
+        return False
+
+    # Math, greetings, or a short jab at the bot. Not "how did he die".
+    def is_off_topic(self, text):
+        q = " ".join((text or "").lower().split())
+        if not q:
+            return False
+        if (
+            self.about_this_tab(q)
+            or self.want_search(q)
+            or self.want_exact(q)
+            or self.is_page_death(q)
+            or self.is_http_link(text)
+        ):
+            return False
+        compact = q.replace(" ", "")
+        math_ok = True
+        for ch in compact:
+            if ch not in "0123456789+-*=/.x":
+                math_ok = False
+                break
+        if math_ok and any(ch.isdigit() for ch in compact):
+            return True
+        if q in (
+            "yo",
+            "hey",
+            "hi",
+            "hello",
+            "sup",
+            "whats up",
+            "what's up",
+        ):
+            return True
+        words = q.split()
+        if len(words) <= 3 and (
+            q.startswith("your ")
+            or q.startswith("you're ")
+            or q.startswith("youre ")
+            or q.startswith("you are ")
+            or q.startswith("you ")
+        ):
+            return True
+        return False
+
+    def want_search(self, question):
+        if not question:
+            return False
+        q = question.lower()
+        markers = (
+            "search",
+            "look it up",
+            "look up",
+            "look this up",
+            "use the internet",
+            "use web",
+            "google",
+        )
+        for word in markers:
+            if word in q:
+                return True
         return False
 
     # True if the question is about the open tab (notes are enough; skip search).

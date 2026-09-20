@@ -1,5 +1,3 @@
-from openai import OpenAI
-
 from backend import config
 from backend.pages import prompts
 
@@ -18,9 +16,8 @@ def folder_key(url):
 
 class PageAssistant:
     def __init__(self):
-        api_key = config.require_openai_api_key()
-        self.client = OpenAI(api_key=api_key)
-        self.model = config.PAGES_OPENAI_MODEL
+        self.client = config.make_client()
+        self.model = config.PAGES_MODEL
 
     # Prefer ## heading blocks from the tab. Else cut by character count.
     def split_text(self, text):

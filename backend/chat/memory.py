@@ -33,6 +33,13 @@ def clip_assistant_reply(text):
     if body == SORRY_LINE or body == HELP_LINE or body.startswith("I am not allowed"):
         return body
     lines = body.splitlines()
+    if config.MODE == "local":
+        kept = []
+        for line in lines:
+            if line.strip() == "Sources:" or line.startswith("Sources:"):
+                break
+            kept.append(line)
+        return "\n".join(kept).strip()
     if lines and lines[0].startswith("Status:"):
         lines = lines[1:]
         while lines and not lines[0].strip():
