@@ -13,8 +13,9 @@ Do not commit or post `.env`. Do not post `debug.json` or anything under `backen
 
 ## Setup
 
+Run these in this folder.
+
 ```bash
-cd tabkit
 python -m venv .venv
 ```
 
